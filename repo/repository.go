@@ -21,7 +21,7 @@ var (
 type GameStoreRepo interface {
 	GetAllBranches() ([]model.Branch, error)
 	GetBranchByID(id int) (model.Branch, error)
-	AddNewBranch(b model.Branch) (model.Branch, error)
+	AddNewBranch(b model.Branch) (model.IDResp, error)
 	UpdateBranch(id int, b model.Branch) error
 	DeleteBranch(id int) error
 }
@@ -62,6 +62,10 @@ func (r *MysqlRepo) GetAllBranches() ([]model.Branch, error) {
 		branches = append(branches, b)
 	}
 
+	if len(branches) == 0 {
+		log.Println("empty table")
+		return nil, ErrNoRows
+	}
 	return branches, nil
 }
 
@@ -84,21 +88,20 @@ func (r *MysqlRepo) GetBranchByID(id int) (model.Branch, error) {
 	return b, nil
 }
 
-func (r *MysqlRepo) AddNewBranch(b model.Branch) (model.Branch, error) {
+func (r *MysqlRepo) AddNewBranch(b model.Branch) (model.IDResp, error) {
 	result, err := r.DB.Exec("INSERT INTO branches (name, location) VALUES (?,?)", b.Name, b.Location)
 	if err != nil {
 		log.Println("error query")
-		return model.Branch{}, ErrQuery
+		return model.IDResp{}, ErrQuery
 	}
 
 	lastID, err := result.LastInsertId()
 	if err != nil {
 		log.Println("error getting last id")
-		return model.Branch{}, ErrLastInsertId
+		return model.IDResp{}, ErrLastInsertId
 	}
 
-	b.Branch_Id = int(lastID)
-	return b, nil
+	return model.IDResp{Branch_Id: int(lastID)}, nil
 }
 
 func (r *MysqlRepo) UpdateBranch(id int, b model.Branch) error {
