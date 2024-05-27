@@ -9,6 +9,7 @@ import (
 
 func main() {
 	db := config.Connect()
+	defer db.Close()
 
 	GameStoreRepo := &repo.MysqlRepo{DB: db}
 	GameStoreHandler := &handler.GameStoreHandler{Repo: GameStoreRepo}
